@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Volte.Data.JWT
+namespace Volte.Data.Token
 {
     public class SignatureVerificationException : Exception
     {

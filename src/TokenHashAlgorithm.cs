@@ -1,4 +1,4 @@
-﻿namespace Volte.Data.JWT
+﻿namespace Volte.Data.Token
 {
 	public enum JwtHashAlgorithm
 	{

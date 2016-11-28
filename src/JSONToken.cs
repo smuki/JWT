@@ -5,12 +5,12 @@ using System.Text;
 
 using Volte.Data.Json;
 
-namespace Volte.Data.JWT
+namespace Volte.Data.Token
 {
     /// <summary>
     /// Provides methods for encoding and decoding JSON Web Tokens.
     /// </summary>
-    public static class JsonWebToken
+    public static class JSONToken
     {
         private static readonly IDictionary<JwtHashAlgorithm, Func<byte[], byte[], byte[]>> HashAlgorithms;
 
@@ -20,7 +20,7 @@ namespace Volte.Data.JWT
 
         private static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
-        static JsonWebToken()
+        static JSONToken()
         {
             HashAlgorithms = new Dictionary<JwtHashAlgorithm, Func<byte[], byte[], byte[]>>
             {
