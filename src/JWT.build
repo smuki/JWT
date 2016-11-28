@@ -1,0 +1,39 @@
+﻿<?xml version="1.0"?>
+<project name="JWT" default="build">
+    <property name="build.dir" value="..\dist\" />
+    <property name = "debug" value  = "true" />
+    <property name = "unsafe" value = "true" />
+
+    <target name="build" depends="JWT">
+    </target>
+
+    <target name="JWT">
+        <property name="unsafe" value="true" />
+        <delete file="..\dist\Volte.Data.JWT.dll" failonerror="false" />
+        <delete file="..\dist\Volte.Data.JWT.pdb" failonerror="false" />
+        <csc target="library" output="..\dist\Volte.Data.JWT.dll" debug="${debug}" unsafe="${unsafe}">
+            <nowarn>
+                <!-- do not report deprecation warnings -->
+                <warning number = "0618" />
+                <warning number = "0168" />
+                <warning number = "0108" />
+                <warning number = "0219" />
+                <warning number = "0252" />
+                <warning number = "0105" />
+            </nowarn>
+            <sources>
+                <include name = "JWT.cs" />
+                <include name = "JwtHashAlgorithm.cs" />
+                <include name = "SignatureVerificationException.cs" />
+                <include name = "TokenExpiredException.cs" />
+            </sources>
+            <references>
+                <include name="..\dist\Volte.Data.Json.dll" />
+                <include name="..\dist\Volte.Utils.dll" />
+            </references>
+
+        </csc>
+
+    </target>
+
+</project>
