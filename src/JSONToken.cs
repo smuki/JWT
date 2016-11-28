@@ -7,17 +7,9 @@ using Volte.Data.Json;
 
 namespace Volte.Data.Token
 {
-    /// <summary>
-    /// Provides methods for encoding and decoding JSON Web Tokens.
-    /// </summary>
     public static class JSONToken
     {
         private static readonly IDictionary<JwtHashAlgorithm, Func<byte[], byte[], byte[]>> HashAlgorithms;
-
-        /// <summary>
-        /// Pluggable JSON Serializer
-        /// </summary>
-
         private static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
         static JSONToken()
@@ -30,51 +22,21 @@ namespace Volte.Data.Token
             };
         }
 
-        /// <summary>
-        /// Creates a JWT given a payload, the signing key, and the algorithm to use.
-        /// </summary>
-        /// <param name="payload">An arbitrary payload (must be serializable to JSON via <see cref="System.Web.Script.Serialization.JavaScriptSerializer"/>).</param>
-        /// <param name="key">The key used to sign the token.</param>
-        /// <param name="algorithm">The hash algorithm to use.</param>
-        /// <returns>The generated JWT.</returns>
         public static string Encode(JSONObject payload, string key, JwtHashAlgorithm algorithm)
         {
             return Encode(new JSONObject() , payload , Encoding.UTF8.GetBytes(key) , algorithm);
         }
 
-        /// <summary>
-        /// Creates a JWT given a payload, the signing key, and the algorithm to use.
-        /// </summary>
-        /// <param name="payload">An arbitrary payload (must be serializable to JSON via <see cref="System.Web.Script.Serialization.JavaScriptSerializer"/>).</param>
-        /// <param name="key">The key used to sign the token.</param>
-        /// <param name="algorithm">The hash algorithm to use.</param>
-        /// <returns>The generated JWT.</returns>
         public static string Encode(JSONObject payload, byte[] key, JwtHashAlgorithm algorithm)
         {
             return Encode(new JSONObject(), payload, key, algorithm);
         }
 
-        /// <summary>
-        /// Creates a JWT given a set of arbitrary extra headers, a payload, the signing key, and the algorithm to use.
-        /// </summary>
-        /// <param name="extraHeaders">An arbitrary set of extra headers. Will be augmented with the standard "typ" and "alg" headers.</param>
-        /// <param name="payload">An arbitrary payload (must be serializable to JSON via <see cref="System.Web.Script.Serialization.JavaScriptSerializer"/>).</param>
-        /// <param name="key">The key bytes used to sign the token.</param>
-        /// <param name="algorithm">The hash algorithm to use.</param>
-        /// <returns>The generated JWT.</returns>
         public static string Encode(JSONObject extraHeaders , JSONObject payload , string key , JwtHashAlgorithm algorithm)
         {
             return Encode(extraHeaders, payload, Encoding.UTF8.GetBytes(key), algorithm);
         }
 
-        /// <summary>
-        /// Creates a JWT given a header, a payload, the signing key, and the algorithm to use.
-        /// </summary>
-        /// <param name="extraHeaders">An arbitrary set of extra headers. Will be augmented with the standard "typ" and "alg" headers.</param>
-        /// <param name="payload">An arbitrary payload (must be serializable to JSON via <see cref="System.Web.Script.Serialization.JavaScriptSerializer"/>).</param>
-        /// <param name="key">The key bytes used to sign the token.</param>
-        /// <param name="algorithm">The hash algorithm to use.</param>
-        /// <returns>The generated JWT.</returns>
         public static string Encode(JSONObject extraHeaders, object payload, byte[] key, JwtHashAlgorithm algorithm)
         {
             var segments = new List<string>();
@@ -97,29 +59,11 @@ namespace Volte.Data.Token
             return string.Join(".", segments.ToArray());
         }
 
-        /// <summary>
-        /// Given a JWT, decode it and return the JSON payload.
-        /// </summary>
-        /// <param name="token">The JWT.</param>
-        /// <param name="key">The key that was used to sign the JWT.</param>
-        /// <param name="verify">Whether to verify the signature (default is true).</param>
-        /// <returns>A string containing the JSON payload.</returns>
-        /// <exception cref="SignatureVerificationException">Thrown if the verify parameter was true and the signature was NOT valid or if the JWT was signed with an unsupported algorithm.</exception>
-        /// <exception cref="TokenExpiredException">Thrown if the verify parameter was true and the token has an expired exp claim.</exception>
         public static string Decode(string token, string key, bool verify = true)
         {
             return Decode(token, Encoding.UTF8.GetBytes(key), verify);
         }
 
-        /// <summary>
-        /// Given a JWT, decode it and return the JSON payload.
-        /// </summary>
-        /// <param name="token">The JWT.</param>
-        /// <param name="key">The key bytes that were used to sign the JWT.</param>
-        /// <param name="verify">Whether to verify the signature (default is true).</param>
-        /// <returns>A string containing the JSON payload.</returns>
-        /// <exception cref="SignatureVerificationException">Thrown if the verify parameter was true and the signature was NOT valid or if the JWT was signed with an unsupported algorithm.</exception>
-        /// <exception cref="TokenExpiredException">Thrown if the verify parameter was true and the token has an expired exp claim.</exception>
         public static string Decode(string token, byte[] key, bool verify = true)
         {
             var parts = token.Split('.');
@@ -139,22 +83,12 @@ namespace Volte.Data.Token
             return payloadJson;
         }
 
-        /// <summary>
-        /// Given a JWT, decode it and return the payload as an object (by deserializing it with <see cref="System.Web.Script.Serialization.JavaScriptSerializer"/>).
-        /// </summary>
-        /// <param name="token">The JWT.</param>
-        /// <param name="key">The key that was used to sign the JWT.</param>
-        /// <param name="verify">Whether to verify the signature (default is true).</param>
-        /// <returns>An object representing the payload.</returns>
-        /// <exception cref="SignatureVerificationException">Thrown if the verify parameter was true and the signature was NOT valid or if the JWT was signed with an unsupported algorithm.</exception>
-        /// <exception cref="TokenExpiredException">Thrown if the verify parameter was true and the token has an expired exp claim.</exception>
         public static JSONObject DecodeToObject(string token , byte[] key , bool verify = true)
         {
             var payloadJson = Decode(token, key, verify);
             return new JSONObject(payloadJson);
         }
 
-        /// <remarks>From JWT spec</remarks>
         public static string Base64UrlEncode(byte[] input)
         {
             var output = Convert.ToBase64String(input);
@@ -164,7 +98,6 @@ namespace Volte.Data.Token
             return output;
         }
 
-        /// <remarks>From JWT spec</remarks>
         public static byte[] Base64UrlDecode(string input)
         {
             var output = input;
@@ -181,14 +114,6 @@ namespace Volte.Data.Token
             return converted;
         }
 
-        /// <summary>
-        /// Given the JWT, verifies it.
-        /// </summary>
-        /// <param name="payloadJson">>An arbitrary payload (already serialized to JSON).</param>
-        /// <param name="decodedCrypto">Decoded body</param>
-        /// <param name="decodedSignature">Decoded signature</param>
-        /// <exception cref="SignatureVerificationException">The signature is invalid.</exception>
-        /// <exception cref="TokenExpiredException">The token has expired.</exception>
         public static void Verify(string payloadJson, string decodedCrypto, string decodedSignature)
         {
             if (decodedCrypto != decodedSignature)
