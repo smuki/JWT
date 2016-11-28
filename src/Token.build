@@ -22,7 +22,7 @@
                 <warning number = "0105" />
             </nowarn>
             <sources>
-                <include name = "Token.cs" />
+                <include name = "JSONToken.cs" />
                 <include name = "TokenHashAlgorithm.cs" />
                 <include name = "SignatureVerificationException.cs" />
                 <include name = "TokenExpiredException.cs" />
