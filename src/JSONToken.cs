@@ -9,6 +9,7 @@ namespace Volte.Data.Token
 {
     public static class JSONToken
     {
+        const string ZFILE_NAME = "JSONToken";
         private static readonly IDictionary<JwtHashAlgorithm, Func<byte[], byte[], byte[]>> HashAlgorithms;
         private static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
@@ -58,8 +59,8 @@ namespace Volte.Data.Token
         {
             var parts = token.Split('.');
             if (parts.Length != 3) {
-                payloadJson = "";
-                //throw new ArgumentException("Token must consist from 3 delimited by dot parts");
+                //payloadJson = "";
+                ZZLogger.Debug(ZFILE_NAME,"Token must consist from 3 delimited by dot parts");
             }
 
             var payload = parts[1];
@@ -102,6 +103,7 @@ namespace Volte.Data.Token
         public static bool Verify(string payloadJson, string decodedCrypto, string decodedSignature)
         {
             if (decodedCrypto != decodedSignature) {
+                ZZLogger.Debug(ZFILE_NAME , "Invalid signature. Expected {"+ decodedCrypto+"} got "+ decodedSignature);
                 return false;
                 //throw new SignatureVerificationException(string.Format("Invalid signature. Expected {0} got {1}", decodedCrypto, decodedSignature));
             }
@@ -113,6 +115,7 @@ namespace Volte.Data.Token
 
             var secondsSinceEpoch = Math.Round((DateTime.UtcNow - UnixEpoch).TotalSeconds);
             if (secondsSinceEpoch >= expInt) {
+                ZZLogger.Debug(ZFILE_NAME , "Token has. expired ");
                 return false;
                 //throw new TokenExpiredException("Token has expired.");
             }
