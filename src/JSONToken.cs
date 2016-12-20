@@ -69,7 +69,7 @@ namespace Volte.Data.Token
             if (verify) {
                 Verify(payload, payloadJson, parts, key);
             }else{
-                payloadJson = "";
+                ZZLogger.Debug(ZFILE_NAME , "Verify false");
             }
 
             return payloadJson;
