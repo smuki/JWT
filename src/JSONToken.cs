@@ -71,9 +71,11 @@ namespace Volte.Data.Token
             var payloadJson = Encoding.UTF8.GetString(Base64UrlDecode(payload));
 
             if (verify) {
-                JWTVerify="OK";
-                Verify(payload, payloadJson, parts, key);
+                if (Verify(payload, payloadJson, parts, key)) {
+                    JWTVerify="OK";
+                }
             }else{
+                JWTVerify="OK";
                 ZZLogger.Debug(ZFILE_NAME , "Verify false");
             }
 
