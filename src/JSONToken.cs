@@ -7,13 +7,16 @@ using Volte.Data.Json;
 
 namespace Volte.Data.Token
 {
-    public static class JSONToken
+
+    public class JSONToken
     {
         const string ZFILE_NAME = "JSONToken";
-        private static readonly IDictionary<JwtHashAlgorithm, Func<byte[], byte[], byte[]>> HashAlgorithms;
-        private static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+        private static IDictionary<JwtHashAlgorithm, Func<byte[], byte[], byte[]>> HashAlgorithms;
+        private static DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
-        static JSONToken()
+        public string JWTVerify = "";
+
+        public JSONToken()
         {
             HashAlgorithms = new Dictionary<JwtHashAlgorithm, Func<byte[], byte[], byte[]>>
             {
@@ -23,12 +26,12 @@ namespace Volte.Data.Token
             };
         }
 
-        public static string Encode(JSONObject payload , string key , JwtHashAlgorithm algorithm)
+        public string Encode(JSONObject payload , string key , JwtHashAlgorithm algorithm)
         {
             return Encode(payload , Encoding.UTF8.GetBytes(key) , algorithm);
         }
 
-        public static string Encode(JSONObject payload , byte[] key , JwtHashAlgorithm algorithm)
+        public string Encode(JSONObject payload , byte[] key , JwtHashAlgorithm algorithm)
         {
             var segments = new List<string>();
             JSONObject header = new JSONObject();
@@ -50,15 +53,16 @@ namespace Volte.Data.Token
             return string.Join(".", segments.ToArray());
         }
 
-        public static string Decode(string token , string key , bool verify = true)
+        public string Decode(string token , string key , bool verify = true)
         {
             return Decode(token, Encoding.UTF8.GetBytes(key), verify);
         }
 
-        public static string Decode(string token , byte[] key , bool verify = true)
+        public string Decode(string token , byte[] key , bool verify = true)
         {
             var parts = token.Split('.');
             if (parts.Length != 3) {
+                JWTVerify="INVALID_TOKENTOKEN";
                 //payloadJson = "";
                 ZZLogger.Debug(ZFILE_NAME,"Token must consist from 3 delimited by dot parts");
             }
@@ -67,6 +71,7 @@ namespace Volte.Data.Token
             var payloadJson = Encoding.UTF8.GetString(Base64UrlDecode(payload));
 
             if (verify) {
+                JWTVerify="OK";
                 Verify(payload, payloadJson, parts, key);
             }else{
                 ZZLogger.Debug(ZFILE_NAME , "Verify false");
@@ -75,7 +80,7 @@ namespace Volte.Data.Token
             return payloadJson;
         }
 
-        public static string Base64UrlEncode(byte[] input)
+        public string Base64UrlEncode(byte[] input)
         {
             var output = Convert.ToBase64String(input);
             output = output.Split('=')[0]; // Remove any trailing '='s
@@ -84,7 +89,7 @@ namespace Volte.Data.Token
             return output;
         }
 
-        public static byte[] Base64UrlDecode(string input)
+        public byte[] Base64UrlDecode(string input)
         {
             var output = input;
             output = output.Replace('-', '+'); // 62nd char of encoding
@@ -100,10 +105,11 @@ namespace Volte.Data.Token
             return converted;
         }
 
-        public static bool Verify(string payloadJson, string decodedCrypto, string decodedSignature)
+        public bool Verify(string payloadJson, string decodedCrypto, string decodedSignature)
         {
             if (decodedCrypto != decodedSignature) {
                 ZZLogger.Debug(ZFILE_NAME , "Invalid signature. Expected {"+ decodedCrypto+"} got "+ decodedSignature);
+                JWTVerify = "INVALID_SIGNATURE";
                 return false;
                 //throw new SignatureVerificationException(string.Format("Invalid signature. Expected {0} got {1}", decodedCrypto, decodedSignature));
             }
@@ -116,30 +122,36 @@ namespace Volte.Data.Token
             var secondsSinceEpoch = Math.Round((DateTime.UtcNow - UnixEpoch).TotalSeconds);
             if (secondsSinceEpoch >= expInt) {
                 ZZLogger.Debug(ZFILE_NAME , "Token has. expired ");
+                JWTVerify = "EXPIRED";
                 return false;
                 //throw new TokenExpiredException("Token has expired.");
             }
             return true;
         }
 
-        private static bool Verify(string payload, string payloadJson, string[] parts, byte[] key)
+        private bool Verify(string payload, string payloadJson, string[] parts, byte[] key)
         {
-            var crypto        = Base64UrlDecode(parts[2]);
-            var decodedCrypto = Convert.ToBase64String(crypto);
+            try {
+                var crypto        = Base64UrlDecode(parts[2]);
+                var decodedCrypto = Convert.ToBase64String(crypto);
 
-            var header            = parts[0];
-            var headerJson        = Encoding.UTF8.GetString(Base64UrlDecode(header));
-            JSONObject headerData = new JSONObject(headerJson);
-            var algorithm         = headerData.GetValue("alg");
+                var header            = parts[0];
+                var headerJson        = Encoding.UTF8.GetString(Base64UrlDecode(header));
+                JSONObject headerData = new JSONObject(headerJson);
+                var algorithm         = headerData.GetValue("alg");
 
-            var bytesToSign      = Encoding.UTF8.GetBytes(string.Concat(header, ".", payload));
-            var signatureData    = HashAlgorithms[GetHashAlgorithm(algorithm)](key, bytesToSign);
-            var decodedSignature = Convert.ToBase64String(signatureData);
+                var bytesToSign      = Encoding.UTF8.GetBytes(string.Concat(header, ".", payload));
+                var signatureData    = HashAlgorithms[GetHashAlgorithm(algorithm)](key, bytesToSign);
+                var decodedSignature = Convert.ToBase64String(signatureData);
 
-           return Verify(payloadJson, decodedCrypto, decodedSignature);
+                return Verify(payloadJson, decodedCrypto, decodedSignature);
+            } catch (Exception e) {
+
+            }
+            return false;
         }
 
-        private static JwtHashAlgorithm GetHashAlgorithm(string algorithm)
+        private JwtHashAlgorithm GetHashAlgorithm(string algorithm)
         {
             switch (algorithm)
             {
