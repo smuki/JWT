@@ -1,4 +1,6 @@
 ﻿using System;
+using System.IO;
+using System.IO.Compression;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
@@ -15,6 +17,7 @@ namespace Volte.Data.Token
         private static DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
         public string JWTVerify = "";
+        public bool bCompress   = false;
 
         public JSONToken()
         {
@@ -31,6 +34,30 @@ namespace Volte.Data.Token
             return Encode(payload , Encoding.UTF8.GetBytes(key) , algorithm);
         }
 
+        private byte[] Compress(byte[] bytes)
+        {
+            using(MemoryStream ms = new MemoryStream()) {
+                DeflateStream Compress = new DeflateStream(ms, CompressionMode.Compress);
+                Compress.Write(bytes, 0, bytes.Length);
+                Compress.Close();
+                return ms.ToArray();
+
+            }
+        }
+
+        private byte[] Decompress(byte[] bytes)
+        {
+            using(MemoryStream tempMs = new MemoryStream()) {
+                using(MemoryStream ms = new MemoryStream(bytes)) {
+                    DeflateStream Decompress = new DeflateStream(ms, CompressionMode.Decompress);
+                    Decompress.CopyTo(tempMs);
+                    Decompress.Close();
+                    return tempMs.ToArray();
+                }
+            }
+
+        }
+
         public string Encode(JSONObject payload , byte[] key , JwtHashAlgorithm algorithm)
         {
             var segments = new List<string>();
@@ -38,8 +65,14 @@ namespace Volte.Data.Token
             header.SetValue("typ" , "JWT");
             header.SetValue("alg" , algorithm.ToString());
 
-            var headerBytes  = Encoding.UTF8.GetBytes(header.ToString());
             var payloadBytes = Encoding.UTF8.GetBytes(payload.ToString());
+            if (bCompress){
+                header.SetValue("zip" , "DEF");
+
+                payloadBytes = Compress(Encoding.UTF8.GetBytes(payload.ToString()));
+
+            }
+            var headerBytes  = Encoding.UTF8.GetBytes(header.ToString());
 
             segments.Add(Base64UrlEncode(headerBytes));
             segments.Add(Base64UrlEncode(payloadBytes));
@@ -67,8 +100,19 @@ namespace Volte.Data.Token
                 ZZLogger.Debug(ZFILE_NAME,"Token must consist from 3 delimited by dot parts");
             }
 
+            var headerJson    = Encoding.UTF8.GetString(Base64UrlDecode(parts[0]));
+            JSONObject header = new JSONObject(headerJson);
+
+            ZZLogger.Debug(ZFILE_NAME,header.ToString());
+
+            var payloadJson ="";
             var payload = parts[1];
-            var payloadJson = Encoding.UTF8.GetString(Base64UrlDecode(payload));
+
+            if (header.GetValue("zip")=="DEF"){
+                payloadJson = Encoding.UTF8.GetString(Decompress(Base64UrlDecode(payload)));
+            }else{
+                payloadJson = Encoding.UTF8.GetString(Base64UrlDecode(payload));
+            }
 
             if (verify) {
                 if (Verify(payload, payloadJson, parts, key)) {
